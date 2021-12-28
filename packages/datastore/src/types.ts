@@ -335,10 +335,7 @@ export type NonModelTypeConstructor<T> = {
 // Class for model
 export type PersistentModelConstructor<
 	T extends PersistentModel<K>,
-	K extends PersistentModelMetaData = {
-		identifier: ManagedIdentifier;
-		readOnlyFields: 'createdAt' | 'updatedAt';
-	}
+	K extends PersistentModelMetaData = DefaultPersistentModelMetaData
 > = {
 	new (init: ModelInit<T, K>): T;
 	copyOf(src: T, mutator: (draft: MutableModel<T, K>) => void): T;
@@ -362,48 +359,35 @@ export type CustomIdentifier<F extends string> = Brand<
 	'CustomIdentifier'
 >; // you provide the values
 
-type IdentifierFields<
-	X extends
-		| ManagedIdentifier
-		| OptionallyManagedIdentifier
-		| CustomIdentifier<any> = ManagedIdentifier
-> = X extends ManagedIdentifier
-	? { [K in X['field']]: string }
-	: X extends OptionallyManagedIdentifier
-	? { [K in X['field']]: string }
-	: X extends CustomIdentifier<infer J>
-	? { [K in J]: string }
-	: X extends unknown
-	? { [K in ManagedIdentifier['field']]: string }
-	: never;
+export type Identifier =
+	| ManagedIdentifier
+	| OptionallyManagedIdentifier
+	| CustomIdentifier<any>;
 
-type IdentifierFieldsInit<
-	X extends
-		| ManagedIdentifier
-		| OptionallyManagedIdentifier
-		| CustomIdentifier<any> = ManagedIdentifier
-> = X extends ManagedIdentifier
-	? {}
-	: X extends OptionallyManagedIdentifier
-	? { [K in X['field']]?: string }
-	: X extends CustomIdentifier<infer J>
-	? { [K in J]: string }
-	: {};
+export type IdentifierFields<X extends Identifier = ManagedIdentifier> =
+	X extends ManagedIdentifier | OptionallyManagedIdentifier
+		? { [K in X['field']]: string }
+		: X extends CustomIdentifier<infer J>
+		? { [K in J]: string }
+		: { [K in ManagedIdentifier['field']]: string };
+
+type IdentifierFieldsInit<X extends Identifier = ManagedIdentifier> =
+	X extends ManagedIdentifier
+		? {}
+		: X extends OptionallyManagedIdentifier
+		? { [K in X['field']]?: string }
+		: X extends CustomIdentifier<infer J>
+		? { [K in J]: string }
+		: {};
 
 // Instance of model
 export type PersistentModelMetaData = {
-	identifier?:
-		| ManagedIdentifier
-		| OptionallyManagedIdentifier
-		| CustomIdentifier<any>;
+	identifier?: Identifier;
 	readOnlyFields: string;
 };
 
 export type PersistentModel<
-	META extends PersistentModelMetaData = {
-		identifier: ManagedIdentifier;
-		readOnlyFields: 'createdAt' | 'updatedAt';
-	}
+	META extends PersistentModelMetaData = DefaultPersistentModelMetaData
 > = Readonly<
 	IdentifierFields<META['identifier']> &
 		Record<META['readOnlyFields'] | string, any>
@@ -411,10 +395,7 @@ export type PersistentModel<
 
 export type ModelInit<
 	T extends PersistentModel<M>,
-	M extends PersistentModelMetaData = {
-		identifier: ManagedIdentifier;
-		readOnlyFields: 'createdAt' | 'updatedAt';
-	}
+	M extends PersistentModelMetaData = DefaultPersistentModelMetaData
 > = Omit<
 	T,
 	keyof IdentifierFields<M['identifier']> | M['readOnlyFields'] | symbol
@@ -429,10 +410,7 @@ type DeepWritable<T> = {
 
 export type MutableModel<
 	T extends PersistentModel<M>,
-	M extends PersistentModelMetaData = {
-		identifier: ManagedIdentifier;
-		readOnlyFields: 'createdAt' | 'updatedAt';
-	}
+	M extends PersistentModelMetaData = DefaultPersistentModelMetaData
 	// This provides Intellisense with ALL of the properties, regardless of read-only
 	// but will throw a linting error if trying to overwrite a read-only property
 > = DeepWritable<
