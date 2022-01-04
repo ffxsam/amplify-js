@@ -9,6 +9,13 @@ import {
 } from 'immer';
 import { v4 as uuid4 } from 'uuid';
 import Observable, { ZenObservable } from 'zen-observable-ts';
+import {
+	CustomIdentifier,
+	Identifier,
+	IdentifierFields,
+	OptionallyManagedIdentifier,
+	PersistentModelMetaData,
+} from '..';
 import { defaultAuthStrategy, multiAuthStrategy } from '../authModeStrategies';
 import {
 	isPredicatesAll,
@@ -417,7 +424,7 @@ const createModelClass = <T extends PersistentModel>(
 							? <ModelInstanceMetadata>(<unknown>init)
 							: <ModelInstanceMetadata>{};
 					const {
-						id: _id,
+						id: _id, // TODO: Here
 						_version,
 						_lastChangedAt,
 						_deleted,

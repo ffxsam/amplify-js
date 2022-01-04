@@ -845,7 +845,7 @@ export enum LimitTimerRaceResolvedValues {
 //#region ManagedId
 
 type PostManagedIdMetaData = {
-	identifier: ManagedIdentifier; // TODO: test without this
+	identifier: ManagedIdentifier;
 	readOnlyFields: 'createdAt' | 'updatedAt';
 };
 declare class PostManagedId {
@@ -913,7 +913,7 @@ PostOptionalId.copyOf(p2, d => {
 
 //#endregion
 
-//#region CustomId
+//#region CustomId - multi
 
 type PostCustomIdMetaData = {
 	identifier: CustomIdentifier<'tenantId' | 'postId'>;
@@ -952,6 +952,41 @@ PostCustomId.copyOf(p3, d => {
 
 //#endregion
 
+//#region CustomId - single renamed
+
+type PostCustomIdRenamedMetaData = {
+	identifier: CustomIdentifier<'myId'>;
+	readOnlyFields: 'createdAt' | 'updatedAt';
+};
+declare class PostCustomIRenamed {
+	readonly myId: string;
+	readonly title: string;
+	readonly createdAt?: string;
+	readonly updatedAt?: string;
+	constructor(init: ModelInit<PostCustomIRenamed, PostCustomIdRenamedMetaData>);
+	static copyOf(
+		source: PostCustomIRenamed,
+		mutator: (
+			draft: MutableModel<PostCustomIRenamed, PostCustomIdRenamedMetaData>
+		) => MutableModel<PostCustomIRenamed, PostCustomIdRenamedMetaData> | void
+	): PostCustomIRenamed;
+}
+
+const p3b = new PostCustomIRenamed({
+	myId: 'sadasd',
+	// d.tenantId = 'dsdsd'; // This should fail with a compiler error
+	title: 'asdasdasd',
+});
+
+PostCustomIRenamed.copyOf(p3b, d => {
+	// d.id; // This should fail with a compiler error
+	d.myId;
+	// d.myId = 'dsdsd'; // This should fail with a compiler error
+	d.title = 'iuiouoiuo';
+});
+
+//#endregion
+
 //#region BackwardsCompatible
 
 type PostNoIdMetaData = {
@@ -983,3 +1018,49 @@ PostNoId.copyOf(p4, d => {
 });
 
 //#endregion
+
+declare class DataStore {
+	static query<
+		T extends PersistentModel<K>,
+		K extends PersistentModelMetaData = DefaultPersistentModelMetaData
+	>(
+		modelConstructor: PersistentModelConstructor<T, K>,
+		idOrCriteria?:
+			| IdentifierFields<K['identifier']>
+			| (K['identifier'] extends CustomIdentifier<any> ? never : string)
+			| ProducerModelPredicate<T>
+			| typeof PredicateAll,
+		paginationProducer?: ProducerPaginationInput<T>
+	): T;
+}
+
+export type DefaultPersistentModelMetaData = {
+	identifier: ManagedIdentifier;
+	readOnlyFields: 'createdAt' | 'updatedAt';
+};
+
+// Backwards compatible
+const _x11 = DataStore.query(PostNoId, 'XXXXXXX');
+const _x1 = DataStore.query(PostNoId, { id: 'XXXXXXX' });
+
+const _x2a = DataStore.query(PostManagedId, 'XXXXXXX');
+const _x2 = DataStore.query(PostManagedId, { id: 'XXXXXXX' });
+
+const _x3 = DataStore.query(PostOptionalId, { id: 'XXXXXXX' });
+// const _x4aa = DataStore.query(PostCustomId, 'sdsdsdssdds'); // This should fail
+
+// OK ?
+const _x4a = DataStore.query(PostCustomId, {
+	tenantId: 'XXXXXXX',
+	postId: 'XXXXXXX',
+});
+const _x4aa = DataStore.query(PostCustomId, c =>
+	c.tenantId('eq', 'AAAAA').postId('eq', 'BBBBB')
+);
+
+// const _x4b = DataStore.query(PostCustomIRenamed, 'ddddd'); // This should fail
+const _x4bb = DataStore.query(PostCustomIRenamed, { myId: 'XXX' });
+
+// const _x4c = DataStore.query(i, 'ddddd', 'dddddd'); // This should fail
+
+const _x4 = DataStore.query(PostCustomId, _x4a);
